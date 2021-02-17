@@ -1,0 +1,64 @@
+---
+title: "Introduction"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Initialize
+```{r setup}
+Sys.setenv(RETICULATE_PYTHON = "/Users/patir/opt/anaconda3/bin/python")
+library(reticulate)
+reticulate::use_python("/Users/patir/opt/anaconda3/bin/python")
+py_config()
+
+library(scPy2R)
+library(Seurat)
+library(Matrix)
+```
+
+## Process
+```{r, warning=F, message=F}
+sobj = SCTransform(scPy2R::GSM2560248_pbmc, verbose = F)
+sobj = RunPCA(sobj, verbose = F)
+sobj = RunUMAP(sobj, dims = 1:10, verbose = F)
+```
+
+## Visualize true doublets
+```{r, fig.height=4, fig.width=6}
+DimPlot(sobj, group.by = "Call", cols = c("blue","red","grey"))
+```
+## Identify doublets using scrublet
+```{r}
+scrublet_res = scrublet_R(data = as.matrix(sobj@assays$RNA@counts),
+                     n_prin_comps=10)
+```
+
+## View simulated and real doublet score for cells
+```{r, fig.height=3, fig.width=5}
+par(mfrow = c(1,2))
+plot(density(scrublet_res$doublet_scores_sim),xlab="doublet_score",ylab="density",main="Simulated data")
+abline(v = scrublet_res$threshold, col = "red")
+plot(density(scrublet_res$doublet_scores),xlab="doublet_score",ylab="density",main="Real data")
+abline(v = scrublet_res$threshold, col = "red")
+```
+
+## View doublets on cell UMAP
+```{r, fig.height=5, fig.width=5}
+sobj$predicted_doublets = scrublet_res$predicted_doublets
+sobj$doublet_scores = scrublet_res$doublet_scores
+p1 = DimPlot(sobj, group.by = "Call", cols = c("blue","red","grey"))
+p2 = DimPlot(sobj, group.by = "predicted_doublets", cols = c("grey","red"))
+p3 = FeaturePlot(sobj,features = "doublet_scores", cols = c("grey90","black"))
+cowplot::plot_grid(p1,p2,p3) 
+```
+
