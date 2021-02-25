@@ -1,6 +1,11 @@
 # scPy2R
 Single-cell python packages for R
 
+## Installation
+```
+devtools::install_github("anirudhpatir/scrublet@main")
+```
+
 ## Current packages
 
 1. scrublet: adapted from [scfurl](https://github.com/scfurl/m3addon)
@@ -12,7 +17,7 @@ Single-cell python packages for R
 
 ### Usage
 ```
-doublets = scrublet(count_matrix)
+doublets = scrublet_R(count_matrix)
 ```
 
 ## Citation
